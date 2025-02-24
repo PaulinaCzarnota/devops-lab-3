@@ -1,8 +1,8 @@
 Vagrant.configure("2") do |config|
   config.vm.box = "debian/bookworm64"
 
-  # Port Forwarding
-  config.vm.network "forwarded_port", guest: 5000, host: 8081
+  # Port Forwarding 
+  config.vm.network "forwarded_port", guest: 5000, host: 1234
 
   # Provisioning
   config.vm.provision "shell", inline: <<-SHELL
@@ -14,20 +14,15 @@ Vagrant.configure("2") do |config|
       python3 -m venv flask_venv
       source flask_venv/bin/activate
       pip install Flask
+  SHELL
 
-      # Create Flask Web App (if it doesn’t exist)
-      if [ ! -f hello.py ]; then
-          echo "from flask import Flask" > hello.py
-          echo "app = Flask(__name__)" >> hello.py
-          echo "@app.route('/')" >> hello.py
-          echo "def hello():" >> hello.py
-          echo "    return '<p>Hello, World!</p>'" >> hello.py
-          echo "@app.route('/about')" >> hello.py
-          echo "def about():" >> hello.py
-          echo "    return '<p>This is a Flask web app running in a Linux VM.</p>'" >> hello.py
-      fi
+  # Upload hello.py to VM
+  config.vm.provision "file", source: "hello.py", destination: "/home/vagrant/hello.py"
 
-      # Run Flask on Boot
-      nohup flask --app hello run --host=0.0.0.0 &
+  # Start Flask on boot
+  config.vm.provision "shell", inline: <<-SHELL
+      cd /home/vagrant
+      source flask_venv/bin/activate
+      nohup flask --app hello run --host=0.0.0.0 & 
   SHELL
 end
